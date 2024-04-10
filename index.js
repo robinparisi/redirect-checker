@@ -58,16 +58,16 @@ function checkURL (src, destination, maxRedirections = 3) {
       }
 
       getHeaders(URLToCheck).then((headers) => {
-        // console.log({
-        //   urlToCheck: URLToCheck,
-        //   target: destination,
-        //   location: headers.location,
-        //   code: headers.statusCode,
-        //   redirectionsCount: redirectionsCount,
-        //   is_valid: !!((destination === URLToCheck && headers.statusCode >= 200 && headers.statusCode <= 301) && redirectionsCount <= 1),
-        //   test1: headers.location !== null && destination !== headers.location,
-        //   test2: URLToCheck === destination
-        // })
+        console.log({
+          urlToCheck: URLToCheck,
+          target: destination,
+          location: headers.location,
+          code: headers.statusCode,
+          redirectionsCount: redirectionsCount,
+          is_valid: !!((destination === URLToCheck && headers.statusCode >= 200 && headers.statusCode <= 301) && redirectionsCount <= 1),
+          test1: headers.location !== null && destination !== headers.location,
+          test2: URLToCheck === destination
+        })
 
         // if we need to follow redirection
         if (headers.location && URLToCheck !== destination) {
@@ -111,17 +111,21 @@ function getHeaders (urlToParse) {
       const options = {
         protocol: parsedURL.protocol,
         hostname: parsedURL.hostname,
-        method: 'HEAD',
-        path: parsedURL.pathname
+        method: 'GET', // Change method to GET
+        path: parsedURL.pathname + parsedURL.search // Include search part for query parameters
       }
 
-      const protocolHandler = (parsedURL.protocol === 'https:' ? https : http)
+      const protocolHandler = parsedURL.protocol === 'https:' ? https : http
 
       const req = protocolHandler.request(options, (res) => {
-        // console.log(res.statusCode)
-        resolve({
-          statusCode: res.statusCode,
-          location: res.headers.location || null
+        // Consume response body to avoid memory issues but ignore its content
+        res.on('data', () => {})
+        res.on('end', () => {
+          // Resolve the promise when the response has been fully consumed
+          resolve({
+            statusCode: res.statusCode,
+            location: res.headers.location || null
+          })
         })
       })
       req.on('error', (error) => {
